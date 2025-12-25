@@ -26,18 +26,28 @@ Bug report: Describe the issue here...</textarea><br><br>
     const form = document.getElementById('discordForm');
     const status = document.getElementById('status');
 
+    // === CHANGE THIS TO YOUR ACTUAL WORKER URL ===
+    const WORKER_URL = 'https://color-vault-relay.glwplex-7c2.workers.dev';
+
     form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+      e.preventDefault(); // Prevents default form submission (critical!)
+
       status.textContent = 'Sending...';
       status.style.color = 'blue';
 
       const formData = new FormData(form);
 
       try {
-        const response = await fetch('color-vault-relay.glwplex-7c2.workers.dev', {  // REPLACE WITH YOUR WORKER URL
+        const response = await fetch(WORKER_URL, {
           method: 'POST',
           body: formData
         });
+
+        // Check if response is ok before parsing JSON
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Server error ${response.status}: ${errorText}`);
+        }
 
         const result = await response.json();
 
@@ -45,12 +55,15 @@ Bug report: Describe the issue here...</textarea><br><br>
           status.textContent = 'Message sent to Discord successfully!';
           status.style.color = 'green';
           form.reset();
+          // Restore prefilled text after reset (optional)
+          document.getElementById('message').value = 'Bug report: Describe the issue here...';
         } else {
-          status.textContent = 'Error: ' + result.error;
+          status.textContent = 'Error: ' + (result.error || 'Unknown error');
           status.style.color = 'red';
         }
       } catch (err) {
-        status.textContent = 'Network error – try again.';
+        console.error('Fetch error:', err);
+        status.textContent = 'Failed to send: ' + err.message;
         status.style.color = 'red';
       }
     });
